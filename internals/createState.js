@@ -1,3 +1,5 @@
+import { customEventEmitter as emitter } from "../index.js";
+
 export function createState(val = undefined) {
   //this is the state
   var stateStorage = {
@@ -19,9 +21,17 @@ export function createState(val = undefined) {
   });
 
   function changer(newVal) {
-    Promise.resolve().then(() => {
-      stateStorage.setState = newVal;
-    });
+    let prevValue = getter();
+    Promise.resolve()
+      .then(() => {
+        stateStorage.setState = newVal;
+      })
+      .then(() => {
+        if (prevValue !== getter()) {
+          //emit change and dom/virtualdom comparison
+          emitter("change");
+        }
+      });
   }
   function getter() {
     return stateStorage.getState;

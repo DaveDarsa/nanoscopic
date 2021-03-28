@@ -1,22 +1,44 @@
 import { createState } from "./internals/createState.js";
+import { virtualDOM } from "./internals/virtualDOM.js";
+import { ToDOM } from "./internals/ToDOM.js";
 
+//testing a component
 function Header() {
   const [item, changeItem] = createState("Bahahaha");
+  setTimeout(() => {
+    changeItem("not bahaha");
+  }, 2000);
   return `<div>Hello ${item()}</div>`;
 }
-function Body(...props) {
-  return `<div>Hello body</div>`;
+// function Body(...props) {
+//   return `<div>Hello body</div>`;
+// }
+
+// function Footer() {
+//   return `<div>Hello footer</div>`;
+// }
+
+//emitter
+//event emitter that triggers during state change and forces "virtual dom" creation and comparison
+export function customEventEmitter(eventType) {
+  if (!eventType) {
+    console.error("NO EVENT TYPE PROVIDED");
+    return;
+  }
+  //if state changed time to re-render a virtual dom and compare to it's previous self
+  if (eventType === "change") {
+    console.log("change detected");
+    Build.prototype.onChange();
+    //must call virtual dom somehow
+  }
 }
 
-function Footer() {
-  return `<div>Hello footer</div>`;
-}
-
+//the top level api that should be exposed to the user
 function App() {
   //this is where compiler should be;
   // the combined fragments inside the compiler
   //props should be passed straight into the function as an object
-  Build("root", Header, Body, Footer);
+  Build("root", Header);
 }
 
 function Build(rootID, ...args) {
@@ -29,15 +51,16 @@ function Build(rootID, ...args) {
 
   //if any of em isnt a function/invokable then error out
   //in the end append the fragment to the container in html
+  var dom = virtualDOM();
+  dom.createDOM(fragment.cloneNode(true));
+
+  //append to the root element
   document.getElementById(rootID).innerHTML = "";
   document.getElementById(rootID).appendChild(fragment);
 }
 
-function ToDOM(component) {
-  //this is where the parsing shoud happen to a valid HTMLelement, gets appeneded to Build fragment and turned into root's child
-  var range = document.createRange();
-  var fragmentFromComponent = range.createContextualFragment(component());
-  return fragmentFromComponent;
-}
-
+Build.prototype.onChange = function () {
+  console.log("change is happening");
+  //force virtualdom rerender
+};
 App();
