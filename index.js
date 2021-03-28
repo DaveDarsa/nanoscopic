@@ -40,6 +40,8 @@ function App() {
   //props should be passed straight into the function as an object
   Build("root", Header);
 }
+//the virtualdomdom variable outside
+var dom;
 
 function Build(rootID, ...args) {
   //takes in the array of elements from top to bottom
@@ -51,7 +53,7 @@ function Build(rootID, ...args) {
 
   //if any of em isnt a function/invokable then error out
   //in the end append the fragment to the container in html
-  var dom = virtualDOM();
+  dom = virtualDOM();
   dom.createDOM(fragment.cloneNode(true));
 
   //append to the root element
@@ -61,6 +63,9 @@ function Build(rootID, ...args) {
 
 Build.prototype.onChange = function () {
   console.log("change is happening");
+
   //force virtualdom rerender
+  //somehow get reference to virtualdom and use the compare function within
+  dom.updateDOM();
 };
 App();

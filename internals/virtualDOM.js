@@ -13,7 +13,13 @@ export function virtualDOM() {
     console.log(currentDOM.childNodes);
   }
 
+  function updateDOM() {
+    //compare and update dom
+    console.log("comparing here");
+  }
+
   return {
     createDOM,
+    updateDOM,
   };
 }
