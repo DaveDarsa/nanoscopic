@@ -4,12 +4,21 @@ import { ToDOM } from "./internals/ToDOM.js";
 
 //testing a component
 function Header() {
-  const [item, changeItem] = createState("Bahahaha");
+  const [item, changeItem] = createState("Bahahaha", Header.name);
   setTimeout(() => {
-    changeItem("not bahaha");
+    changeItem("not bahahaa");
   }, 2000);
-  return `<div>Hello ${item()}</div>`;
+  return `<div component=Header>Hello ${item()}</div>`;
 }
+
+function Test() {
+  const [test, changeTest] = createState("Test component", Test.name);
+  setTimeout(() => {
+    changeTest("lets see");
+  }, 4000);
+  return `<div component=Test>Hello ${test()}</div>`;
+}
+
 // function Body(...props) {
 //   return `<div>Hello body</div>`;
 // }
@@ -20,7 +29,7 @@ function Header() {
 
 //emitter
 //event emitter that triggers during state change and forces "virtual dom" creation and comparison
-export function customEventEmitter(eventType) {
+export function customEventEmitter(eventType, component) {
   if (!eventType) {
     console.error("NO EVENT TYPE PROVIDED");
     return;
@@ -28,7 +37,8 @@ export function customEventEmitter(eventType) {
   //if state changed time to re-render a virtual dom and compare to it's previous self
   if (eventType === "change") {
     console.log("change detected");
-    Build.prototype.onChange();
+    console.log(component);
+    Build.prototype.onChange(component);
     //must call virtual dom somehow
   }
 }
@@ -38,7 +48,7 @@ function App() {
   //this is where compiler should be;
   // the combined fragments inside the compiler
   //props should be passed straight into the function as an object
-  Build("root", Header);
+  Build("root", Header, Test);
 }
 //the virtualdomdom variable outside
 var dom;
@@ -61,11 +71,12 @@ function Build(rootID, ...args) {
   document.getElementById(rootID).appendChild(fragment);
 }
 
-Build.prototype.onChange = function () {
+Build.prototype.onChange = function (where) {
   console.log("change is happening");
-
+  //where was the change detected
+  console.log(where);
   //force virtualdom rerender
   //somehow get reference to virtualdom and use the compare function within
-  dom.updateDOM();
+  dom.updateDOM(where);
 };
 App();

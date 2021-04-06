@@ -10,11 +10,21 @@ export function virtualDOM() {
     console.log(renderedDOM.childNodes);
 
     // console.log(el.innerHTML);
+    //children of dom
     console.log(currentDOM.childNodes);
   }
 
-  function updateDOM() {
+  function updateDOM(component) {
     //compare and update dom
+    console.log(`component is ${component}`);
+
+    let found = Array.from(currentDOM.childNodes);
+    //find by attribute
+    let element = found.find((children) => {
+      return children.getAttribute("component") === component;
+    });
+    console.log(element);
+
     console.log("comparing here");
   }
 

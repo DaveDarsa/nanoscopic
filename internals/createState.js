@@ -1,6 +1,6 @@
 import { customEventEmitter as emitter } from "../index.js";
 
-export function createState(val = undefined) {
+export function createState(val = undefined, component = "none") {
   //this is the state
   var stateStorage = {
     state: val,
@@ -29,7 +29,7 @@ export function createState(val = undefined) {
       .then(() => {
         if (prevValue !== getter()) {
           //emit change and dom/virtualdom comparison
-          emitter("change");
+          emitter("change", component);
         }
       });
   }
