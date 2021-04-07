@@ -1,6 +1,6 @@
+import { ToDOM } from "./ToDOM.js";
 import { customEventEmitter as emitter } from "../index.js";
-
-export function createState(val = undefined) {
+export function createState(val = undefined, renderFunc, componentName) {
   //this is the state
   var stateStorage = {
     state: val,
@@ -22,14 +22,14 @@ export function createState(val = undefined) {
 
   function changer(newVal) {
     let prevValue = getter();
+    console.log(prevValue);
     Promise.resolve()
       .then(() => {
         stateStorage.setState = newVal;
       })
       .then(() => {
-        if (prevValue !== getter()) {
-          //emit change and dom/virtualdom comparison
-          emitter("change");
+        if (newVal !== prevValue) {
+          emitter("change", ToDOM(renderFunc(newVal)), componentName);
         }
       });
   }
@@ -39,4 +39,4 @@ export function createState(val = undefined) {
   //must return the closured state and the updater
   return [getter, changer];
 }
-//needs a change listener with a custom eventemitter that calls virtualdom creator
+//needs a change listener with a
