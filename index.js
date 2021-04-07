@@ -21,6 +21,15 @@ function Header() {
 
   return render(item());
 }
+
+function Test() {
+  const [test, changeTest] = createState("Test component", Test.name);
+  setTimeout(() => {
+    changeTest("lets see");
+  }, 4000);
+  return `<div component=Test>Hello ${test()}</div>`;
+}
+
 // function Body(...props) {
 //   return `<div>Hello body</div>`;
 // }
