@@ -22,7 +22,6 @@ export function createState(val = undefined, renderFunc, componentName) {
 
   function changer(newVal) {
     let prevValue = getter();
-    console.log(prevValue);
     Promise.resolve()
       .then(() => {
         stateStorage.setState = newVal;
