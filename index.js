@@ -1,5 +1,5 @@
 import { ToDOM } from "./internals/ToDOM.js";
-function Nano() {
+export function Nano() {
   var ChildComponents = [];
   var dom;
   //emitter
@@ -123,8 +123,19 @@ function Nano() {
     return [getter, changer];
   }
 
+  function LinkTo(path) {
+    history.replaceState({ page: `/${path}` }, "", `${path}`);
+    var event = new Event("popstate");
+    window.dispatchEvent(event);
+    return;
+  }
+
   function Build(rootID, ...args) {
     dom = virtualDOM();
+    //for routing
+    window.addEventListener("popstate", function (event) {
+      console.log("popped");
+    });
     //takes in the array of elements from top to bottom
     //compiles everything to a DOM tree by calling the helper for each of the fragments
     args.forEach((component) => {
@@ -146,12 +157,42 @@ function Nano() {
     //append to the root element
     document.getElementById(rootID).innerHTML = "";
     document.getElementById(rootID).appendChild(fragment);
-  }
-  //the virtualdomdom variable outside
 
+    //get the elements that will have a click listeer
+    var clickElements = document.querySelectorAll("[onTouch]");
+    clickElements.forEach((clickItem) => {
+      clickItem.addEventListener(
+        "click",
+        new Function("ev", clickItem.getAttribute("onTouch"))
+      );
+    });
+
+    //find and add linkto listeners to elements
+    var linkElems = document.querySelectorAll("[linkto]");
+    console.log(linkElems);
+    //find their linkto listeners;
+    linkElems.forEach((linkItem) => {
+      let where = linkItem.getAttribute("linkto");
+      if (where)
+        linkItem.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          LinkTo(where);
+        });
+    });
+  }
+  //helper function for stringifying listener functions
+  function ListenerToString(func) {
+    var funcstring = func.toString();
+    return funcstring.slice(
+      funcstring.indexOf("{") + 1,
+      funcstring.lastIndexOf("}")
+    );
+  }
   return {
     Build,
     createState,
+    ListenerToString,
   };
 }
 
@@ -159,3 +200,4 @@ function Nano() {
 // var { Build, createState } = Nano();
 // Build("root", Header, MainContent);
 //gotta export build and statecreator
+export default Nano;

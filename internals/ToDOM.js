@@ -6,6 +6,5 @@ export function ToDOM(component) {
   //this is where the parsing shoud happen to a valid HTMLelement, gets appeneded to Build fragment and turned into root's child
   var range = document.createRange();
   var fragmentFromComponent = range.createContextualFragment(fragmentToRender);
-
   return fragmentFromComponent;
 }
