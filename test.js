@@ -1,5 +1,5 @@
 import { Nano } from "./index.js";
-var { Build, createState, ListenerToString } = Nano();
+var { Build, createState, BindListener, Route } = Nano();
 
 function Header() {
   const [item, changeItem] = createState("Bahahaha", render, Header.name);
@@ -13,12 +13,15 @@ function Header() {
   setTimeout(() => {
     changeItem("Change 2");
   }, 8000);
-  function ClickListener() {
-    console.log(ev);
+  function ClickListener(e) {
+    console.log("ehqwoeih");
+    console.log(e);
+    var a = "hello";
+    const b = 123 * 221;
   }
 
   function render(state) {
-    return `<div component='Header' onTouch=${ListenerToString(
+    return `<div component='Header' onTouch=${BindListener(
       ClickListener
     )} >Hello ${state} <a href='#' linkto=/somewhere>Link here</a> </div>`;
   }
@@ -44,7 +47,7 @@ const InsideMain = (props) => {
 
   //only invoke render after function's subsequent calls
   function render(state) {
-    return `<div component='InsideMain' class='inside'>${props.first} and ${props.second} ${state}</div>`;
+    return `<div component='InsideMain'  class='inside'>${props.first} and ${props.second} ${state}</div>`;
   }
   return render(randomstuff());
 };
@@ -68,8 +71,15 @@ function MainContent() {
     changeContent("Something updated");
   }, 10000);
 
+  function click() {
+    changeContent("Yeah not main anymore");
+    console.log("the function that clicks");
+  }
+
   function render(state) {
-    return `<div component='MainContent' class='maincontent'>${state}
+    return `<div component='MainContent' onTouch=${BindListener(
+      click
+    )} class='maincontent'>${state}
       <div>hello lol</div>
       ${
         MainContent.parent
@@ -80,15 +90,12 @@ function MainContent() {
   }
   return render(content());
 }
+function About() {
+  return `<div class='about'><a href='#' linkto='/'>Go back to main</a></div> `;
+}
 
-Build("root", Header, MainContent);
+Build("root", Header, MainContent, About);
 
-// setTimeout(() => {
-//   history.pushState({ page: "/test" }, "", "/test");
-// }, 2000);
-
-// window.onload = function () {
-//   console.log("started");
-// };
+// Build("root", Route("/", [Header, MainContent]), Route("/about", [About]));
 
 console.log(history);

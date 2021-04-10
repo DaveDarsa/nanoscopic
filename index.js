@@ -2,6 +2,8 @@ import { ToDOM } from "./internals/ToDOM.js";
 export function Nano() {
   var ChildComponents = [];
   var dom;
+  var routes = [];
+  var listeners = [];
   //emitter
   //event emitter that triggers during state change and forces "virtual dom" creation and comparison
   function emitter(eventType, componentRender, componentName) {
@@ -14,6 +16,9 @@ export function Nano() {
       console.log("change detected");
       // console.log(`name is ${componentName}`);
       dom.updateDOM(componentRender, componentName);
+    }
+    if (eventType === "route") {
+      Router();
     }
   }
 
@@ -124,21 +129,20 @@ export function Nano() {
   }
 
   function LinkTo(path) {
-    history.replaceState({ page: `/${path}` }, "", `${path}`);
-    var event = new Event("popstate");
-    window.dispatchEvent(event);
+    Promise.resolve()
+      .then(() => {
+        history.replaceState({}, "", `${path}`);
+      })
+      .then(() => {
+        var event = new Event("popstate");
+        window.dispatchEvent(event);
+      });
+
     return;
   }
 
-  function Build(rootID, ...args) {
-    dom = virtualDOM();
-    //for routing
-    window.addEventListener("popstate", function (event) {
-      console.log("popped");
-    });
-    //takes in the array of elements from top to bottom
-    //compiles everything to a DOM tree by calling the helper for each of the fragments
-    args.forEach((component) => {
+  function Route(path, ...componenets) {
+    componenets.forEach((component) => {
       component.parent = false;
       //parent prop changes after first render async
       setTimeout(() => {
@@ -146,7 +150,44 @@ export function Nano() {
       }, 0);
     });
 
+    // create DOMified components and add it to the routes[] corresponding path components array;
+    var nodes = [];
+    componenets.forEach((component) => {
+      nodes.push(ToDOM(component));
+      console.warn("HOW MANY TIMES");
+      console.warn(nodes);
+    });
+    routes.push({ path, component: nodes });
+    return nodes;
+  }
+  function Router() {
+    //render conditionally
+    console.log(location.pathname);
+  }
+
+  function Build(rootID, ...args) {
+    dom = virtualDOM();
+    //for routing
+    window.addEventListener("popstate", function (event) {
+      emitter("route");
+    });
+
     var fragment = new DocumentFragment();
+    //conditional fragmenting. testing / for now
+    // Array.from(args[0][0].children).forEach((child) => {
+    //   fragment.appendChild(child);
+    // });
+
+    //takes in the array of elements from top to bottom
+    //compiles everything to a DOM tree by calling the helper for each of the fragments
+
+    args.forEach((component) => {
+      component.parent = false;
+      //parent prop changes after first render async
+      setTimeout(() => {
+        component.parent = true;
+      }, 0);
+    });
     args.forEach((component, idx) => {
       fragment.appendChild(ToDOM(component));
       //save its children nodes
@@ -154,17 +195,20 @@ export function Nano() {
     });
 
     dom.createDOM(fragment.cloneNode(true));
+
+    //append the changeable fragment
     //append to the root element
     document.getElementById(rootID).innerHTML = "";
     document.getElementById(rootID).appendChild(fragment);
 
     //get the elements that will have a click listeer
     var clickElements = document.querySelectorAll("[onTouch]");
+    //create and add a function as a listener/remove as attribute
     clickElements.forEach((clickItem) => {
-      clickItem.addEventListener(
-        "click",
-        new Function("ev", clickItem.getAttribute("onTouch"))
-      );
+      //index in the listeners array;
+      var fnIdx = clickItem.getAttribute("onTouch");
+      clickItem.removeAttribute("onTouch");
+      clickItem.addEventListener("click", listeners[fnIdx].fn);
     });
 
     //find and add linkto listeners to elements
@@ -176,23 +220,74 @@ export function Nano() {
       if (where)
         linkItem.addEventListener("click", (e) => {
           e.preventDefault();
-          e.stopPropagation();
           LinkTo(where);
         });
     });
   }
   //helper function for stringifying listener functions
-  function ListenerToString(func) {
-    var funcstring = func.toString();
-    return funcstring.slice(
-      funcstring.indexOf("{") + 1,
-      funcstring.lastIndexOf("}")
-    );
+  function BindListener(func) {
+    // get the indexes of var/let/const/function declarations
+    //properly space function declarations in the string;
+    // function SpaceFnString(str, ...searchStrs) {
+    //   var indices = [];
+    //   var copyStr = str;
+    //   var len = str.length;
+    //   if (len == 0) return [];
+    //   //find each given declaration index
+    //   searchStrs.forEach((searchTerm) => {
+    //     let startIndex = 0,
+    //       index;
+    //     let len = searchTerm.length;
+    //     while ((index = str.indexOf(searchTerm, startIndex)) > -1) {
+    //       indices.push({ index, length: len });
+    //       startIndex = index + len;
+    //     }
+    //   });
+    //   //sort indices ascending;
+    //   indices.sort(function (a, b) {
+    //     return a.index - b.index;
+    //   });
+
+    //   if (indices.length) {
+    //     let incr = 0;
+    //     //add spaces
+    //     indices.forEach((char) => {
+    //       copyStr =
+    //         copyStr.slice(0, char.index + char.length + incr) +
+    //         " " +
+    //         copyStr.slice(char.index + char.length + incr);
+    //       incr = incr + 1;
+    //     });
+    //   }
+
+    //   return copyStr;
+    // }
+
+    // var funcstring = func.toString();
+    // //remove all sorts of whitespaces in the stringified function
+    // var fn = funcstring
+    //   .slice(funcstring.indexOf("{") + 1, funcstring.lastIndexOf("}"))
+    //   .replace(/\s+/g, "")
+    //   .replace(/^\s/, "")
+    //   .replace(/\s$/, "");
+    // //add space after function declarations;
+    // fn = SpaceFnString(fn, "var", "let", "const", "function");
+
+    //woops instead of creating new function from a string
+    //its better to just return internal listeners array position for the specific element
+    var number = listeners.length;
+    listeners.push({
+      id: number,
+      fn: func,
+    });
+
+    return number;
   }
   return {
     Build,
     createState,
-    ListenerToString,
+    BindListener,
+    Route,
   };
 }
 
