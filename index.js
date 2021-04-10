@@ -1,11 +1,13 @@
 import { ToDOM } from "./internals/ToDOM.js";
 export function Nano() {
+  var pathAndComponents = [];
   var ChildComponents = [];
   var dom;
   var docToRender;
   var routes = [];
   var listeners = [];
   var routerInUse = false;
+
   //emitter
   //event emitter that triggers during state change and forces "virtual dom" creation and comparison
   function emitter(eventType, componentRender, componentName) {
@@ -144,7 +146,8 @@ export function Nano() {
   }
 
   function Route(path, ...componenets) {
-    routerInUse = true;
+    if (!routerInUse) routerInUse = true;
+    if (!dom) dom = virtualDOM();
     // componenets.forEach((component) => {
     //   component.parent = false;
     //   //parent prop changes after first render async
@@ -156,27 +159,34 @@ export function Nano() {
     // create DOMified components and add it to the routes[] corresponding path components array;
     routes.push({ path, components: comps });
     // console.warn(routes[0].components);
+    Assemble(docToRender, comps, path);
+
     return comps;
   }
   function Router() {
     //runs on every route change
     //render conditionally
-    //call assemble based on location.
     var loc = location.pathname;
-    var foundPath = routes.find((route) => {
-      return route.path === loc;
-    });
-    if (foundPath) {
-      Assemble(docToRender, foundPath.components);
+    if (routerInUse) {
+      //find path fragment;
+      let toRender = pathAndComponents.find((pnc) => {
+        return pnc.path === loc;
+      });
+
+      let componentTorender = toRender.savedComponents;
+
+      document.getElementById(docToRender).innerHTML = "";
+      document
+        .getElementById(docToRender)
+        .appendChild(componentTorender.cloneNode(true));
+
       BindLinksAndClicks();
     }
-
-    // Assemble(docToRender, routes[0].components);
 
     //otherwise just render 404;
   }
 
-  function Assemble(rootID, args) {
+  function Assemble(rootID, args, path) {
     var fragment = new DocumentFragment();
     //takes in the array of elements from top to bottom
     //compiles everything to a DOM tree by calling the helper for each of the fragments
@@ -189,18 +199,21 @@ export function Nano() {
 
     // dom.createDOM(fragment.cloneNode(true));
 
-    //append the changeable fragment
-    //append to the root element
-
-    document.getElementById(rootID).innerHTML = "";
-    document.getElementById(rootID).appendChild(fragment);
+    //save the path-component fragment if routers being used;
+    if (routerInUse) {
+      pathAndComponents.push({ path, savedComponents: fragment });
+    } else {
+      document.getElementById(rootID).innerHTML = "";
+      document.getElementById(rootID).appendChild(fragment);
+      BindLinksAndClicks();
+    }
   }
 
   function Build(rootID, ...args) {
     //flat components if theyre passed from inside Route function
     args = [].concat.apply([], args);
-    dom = virtualDOM();
     docToRender = rootID;
+    if (!dom) dom = virtualDOM();
     //for routing
     window.addEventListener("popstate", function (event) {
       emitter("route");
@@ -219,6 +232,7 @@ export function Nano() {
       Router();
       return;
     }
+    //if router isnt being used;
     Assemble(rootID, args);
   }
 

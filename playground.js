@@ -97,5 +97,5 @@ function About() {
 //without router
 // Build("root", Header, MainContent, About);
 
-//with router
+// //with router
 Build("root", Route("/", [Header, MainContent]), Route("/about", [About]));
