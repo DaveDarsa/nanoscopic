@@ -2,8 +2,10 @@ import { ToDOM } from "./internals/ToDOM.js";
 export function Nano() {
   var ChildComponents = [];
   var dom;
+  var docToRender;
   var routes = [];
   var listeners = [];
+  var routerInUse = false;
   //emitter
   //event emitter that triggers during state change and forces "virtual dom" creation and comparison
   function emitter(eventType, componentRender, componentName) {
@@ -70,6 +72,9 @@ export function Nano() {
           updatedComponent.removeChild(emptyChild);
         }
       }
+
+      // document.querySelector(`[component=${componentName}]`).innerHTML =
+      //ALSO RUNS ON ELEMENTS THAT ARENT IN THE INNERHTML ANYMORE;
       document.querySelector(`[component=${componentName}]`).innerHTML =
         updatedComponent.innerHTML;
     }
@@ -129,57 +134,77 @@ export function Nano() {
   }
 
   function LinkTo(path) {
-    Promise.resolve()
-      .then(() => {
-        history.replaceState({}, "", `${path}`);
-      })
-      .then(() => {
-        var event = new Event("popstate");
-        window.dispatchEvent(event);
-      });
+    Promise.resolve().then(() => {
+      history.pushState({}, "", `${path}`);
+      var event = new Event("popstate");
+      window.dispatchEvent(event);
+    });
 
     return;
   }
 
   function Route(path, ...componenets) {
-    componenets.forEach((component) => {
-      component.parent = false;
-      //parent prop changes after first render async
-      setTimeout(() => {
-        component.parent = true;
-      }, 0);
-    });
-
+    routerInUse = true;
+    // componenets.forEach((component) => {
+    //   component.parent = false;
+    //   //parent prop changes after first render async
+    //   setTimeout(() => {
+    //     component.parent = true;
+    //   }, 0);
+    // });
+    var comps = componenets[0];
     // create DOMified components and add it to the routes[] corresponding path components array;
-    var nodes = [];
-    componenets.forEach((component) => {
-      nodes.push(ToDOM(component));
-      console.warn("HOW MANY TIMES");
-      console.warn(nodes);
-    });
-    routes.push({ path, component: nodes });
-    return nodes;
+    routes.push({ path, components: comps });
+    // console.warn(routes[0].components);
+    return comps;
   }
   function Router() {
+    //runs on every route change
     //render conditionally
-    console.log(location.pathname);
+    //call assemble based on location.
+    var loc = location.pathname;
+    var foundPath = routes.find((route) => {
+      return route.path === loc;
+    });
+    if (foundPath) {
+      Assemble(docToRender, foundPath.components);
+      BindLinksAndClicks();
+    }
+
+    // Assemble(docToRender, routes[0].components);
+
+    //otherwise just render 404;
+  }
+
+  function Assemble(rootID, args) {
+    var fragment = new DocumentFragment();
+    //takes in the array of elements from top to bottom
+    //compiles everything to a DOM tree by calling the helper for each of the fragments
+
+    args.forEach((component, idx) => {
+      fragment.appendChild(ToDOM(component));
+      //save its children nodes
+      dom.saveNode(fragment.childNodes[idx], component.name);
+    });
+
+    // dom.createDOM(fragment.cloneNode(true));
+
+    //append the changeable fragment
+    //append to the root element
+
+    document.getElementById(rootID).innerHTML = "";
+    document.getElementById(rootID).appendChild(fragment);
   }
 
   function Build(rootID, ...args) {
+    //flat components if theyre passed from inside Route function
+    args = [].concat.apply([], args);
     dom = virtualDOM();
+    docToRender = rootID;
     //for routing
     window.addEventListener("popstate", function (event) {
       emitter("route");
     });
-
-    var fragment = new DocumentFragment();
-    //conditional fragmenting. testing / for now
-    // Array.from(args[0][0].children).forEach((child) => {
-    //   fragment.appendChild(child);
-    // });
-
-    //takes in the array of elements from top to bottom
-    //compiles everything to a DOM tree by calling the helper for each of the fragments
 
     args.forEach((component) => {
       component.parent = false;
@@ -188,41 +213,41 @@ export function Nano() {
         component.parent = true;
       }, 0);
     });
-    args.forEach((component, idx) => {
-      fragment.appendChild(ToDOM(component));
-      //save its children nodes
-      dom.saveNode(fragment.childNodes[idx], component.name);
-    });
+    //runs on first run
+    //2 different types of first render if router is being used or not
+    if (routerInUse) {
+      Router();
+      return;
+    }
+    Assemble(rootID, args);
+  }
 
-    dom.createDOM(fragment.cloneNode(true));
-
-    //append the changeable fragment
-    //append to the root element
-    document.getElementById(rootID).innerHTML = "";
-    document.getElementById(rootID).appendChild(fragment);
-
+  function BindLinksAndClicks() {
+    //find and add linkto listeners to elements
+    var linkElems = document.querySelectorAll("[linkto]");
+    if (linkElems) {
+      //find their linkto listeners;
+      linkElems.forEach((linkItem) => {
+        let where = linkItem.getAttribute("linkto");
+        if (where)
+          linkItem.addEventListener("click", (e) => {
+            // e.preventDefault();
+            LinkTo(where);
+          });
+      });
+    }
+    //bind the clicks
     //get the elements that will have a click listeer
     var clickElements = document.querySelectorAll("[onTouch]");
     //create and add a function as a listener/remove as attribute
-    clickElements.forEach((clickItem) => {
-      //index in the listeners array;
-      var fnIdx = clickItem.getAttribute("onTouch");
-      clickItem.removeAttribute("onTouch");
-      clickItem.addEventListener("click", listeners[fnIdx].fn);
-    });
-
-    //find and add linkto listeners to elements
-    var linkElems = document.querySelectorAll("[linkto]");
-    console.log(linkElems);
-    //find their linkto listeners;
-    linkElems.forEach((linkItem) => {
-      let where = linkItem.getAttribute("linkto");
-      if (where)
-        linkItem.addEventListener("click", (e) => {
-          e.preventDefault();
-          LinkTo(where);
-        });
-    });
+    if (clickElements) {
+      clickElements.forEach((clickItem) => {
+        //index in the listeners array;
+        var fnIdx = clickItem.getAttribute("onTouch");
+        clickItem.removeAttribute("onTouch");
+        clickItem.addEventListener("click", listeners[fnIdx].fn);
+      });
+    }
   }
   //helper function for stringifying listener functions
   function BindListener(func) {

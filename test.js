@@ -23,7 +23,7 @@ function Header() {
   function render(state) {
     return `<div component='Header' onTouch=${BindListener(
       ClickListener
-    )} >Hello ${state} <a href='#' linkto=/somewhere>Link here</a> </div>`;
+    )} >Hello ${state} <a href="#" linkto=/about>Link here</a> </div>`;
   }
 
   return render(item());
@@ -91,11 +91,11 @@ function MainContent() {
   return render(content());
 }
 function About() {
-  return `<div class='about'><a href='#' linkto='/'>Go back to main</a></div> `;
+  return `<div component='About' class='about'><a href="#" linkto='/'>Go back to main</a></div> `;
 }
 
-Build("root", Header, MainContent, About);
+//without router
+// Build("root", Header, MainContent, About);
 
-// Build("root", Route("/", [Header, MainContent]), Route("/about", [About]));
-
-console.log(history);
+//with router
+Build("root", Route("/", [Header, MainContent]), Route("/about", [About]));
