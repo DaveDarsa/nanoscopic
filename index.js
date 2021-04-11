@@ -7,7 +7,8 @@ export function Nano() {
   var routes = [];
   var listeners = [];
   var routerInUse = false;
-
+  var updatedElements = [];
+  var toRender;
   //emitter
   //event emitter that triggers during state change and forces "virtual dom" creation and comparison
   function emitter(eventType, componentRender, componentName) {
@@ -54,6 +55,7 @@ export function Nano() {
       console.log("updating");
       // //new render
       console.log(componentRender.childNodes, componentName);
+      console.warn(componentRender); //and its name
 
       let updatedComponent = componentRender.childNodes[0];
       //find children in the array with same name as componentName
@@ -77,8 +79,61 @@ export function Nano() {
 
       // document.querySelector(`[component=${componentName}]`).innerHTML =
       //ALSO RUNS ON ELEMENTS THAT ARENT IN THE INNERHTML ANYMORE;
-      document.querySelector(`[component=${componentName}]`).innerHTML =
-        updatedComponent.innerHTML;
+
+      if (!routerInUse) {
+        document.querySelector(`[component=${componentName}]`).innerHTML =
+          updatedComponent.innerHTML;
+        return;
+      }
+      //save this value inside the array for memoing
+      // console.log(ToDOM(updatedComponent.innerHTML));
+      //push the update
+      let foundUpdated = updatedElements.find((element) => {
+        return element.name === componentName;
+      });
+
+      let updated = {
+        updatedElement: updatedComponent,
+        name: componentName,
+      };
+
+      if (!foundUpdated) {
+        updatedElements.push(updated);
+      } else {
+        //replace
+        updatedElements[updatedElements.indexOf(foundUpdated)] = updated;
+      }
+
+      console.log(updatedElements);
+
+      //append the nodes this returns to "toRender.savedComponents"
+      function toNode(node) {
+        if (!node) return;
+        console.warn(node);
+        var fragment = document.createDocumentFragment();
+        fragment.appendChild(node);
+
+        return fragment;
+      }
+
+      Array.from(toRender.savedComponents.children).forEach((node) => {
+        let attr = node.getAttribute("component");
+        if (attr) {
+          let found = updatedElements.find((upelem) => {
+            return attr === upelem.name;
+          });
+          if (found) {
+            toRender.savedComponents.replaceChild(found.updatedElement, node);
+          }
+        }
+        let componentTorender = toRender.savedComponents;
+        document.getElementById(docToRender).innerHTML = "";
+        document
+          .getElementById(docToRender)
+          .appendChild(componentTorender.cloneNode(true));
+        BindLinksAndClicks();
+        // console.warn(toRender.savedComponents);
+      });
     }
 
     return {
@@ -87,6 +142,7 @@ export function Nano() {
       saveNode,
     };
   }
+
   //state
   function createState(val = undefined, renderFunc, componentName) {
     //this is the state
@@ -169,12 +225,12 @@ export function Nano() {
     var loc = location.pathname;
     if (routerInUse) {
       //find path fragment;
-      let toRender = pathAndComponents.find((pnc) => {
+      toRender = pathAndComponents.find((pnc) => {
         return pnc.path === loc;
       });
 
+      //get the always updated component children to render
       let componentTorender = toRender.savedComponents;
-
       document.getElementById(docToRender).innerHTML = "";
       document
         .getElementById(docToRender)

@@ -21,7 +21,7 @@ function Header() {
   }
 
   function render(state) {
-    return `<div component='Header' onTouch=${BindListener(
+    return `<div component='Header' class='header' onTouch=${BindListener(
       ClickListener
     )} >Hello ${state} <a href="#" linkto=/about>Link here</a> </div>`;
   }
@@ -47,7 +47,7 @@ const InsideMain = (props) => {
 
   //only invoke render after function's subsequent calls
   function render(state) {
-    return `<div component='InsideMain'  class='inside'>${props.first} and ${props.second} ${state}</div>`;
+    return `<div component='InsideMain' class='inside'>${props.first} and ${props.second} ${state}</div>`;
   }
   return render(randomstuff());
 };
