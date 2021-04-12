@@ -1,6 +1,6 @@
 {
   "name": "nanoscopic-js",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "Barebones react-like framework",
   "main": "index.js",
   "type": "module",
@@ -15,10 +15,10 @@
     "Nano",
     "nanoscopic",
     "framework",
-    "nanoscopic"
+    "nanoscopic-js"
   ],
   "author": "Dave Darsa",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/DaveDarsa/nanoscopic/issues"
   },
