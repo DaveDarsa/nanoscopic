@@ -1,6 +1,6 @@
 {
   "name": "nanoscopic-js",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Barebones react-like framework",
   "main": "index.js",
   "type": "module",

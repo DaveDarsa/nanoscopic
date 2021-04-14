@@ -19,13 +19,13 @@ Nano uses a single HTML file that just has a root div element, which gets update
 
 ```html
 <div id="root"></div>
-<script src="index.js" type="module"></script>
+<script src="index.js"></script>
 ```
 
 **index.js:**
 
 ```js
-import { Nano } from "../../node_modules/nanoscopic-js/index.js";
+import { Nano } from "nanoscopic-js";
 var { Build, createState, BindListener, Route } = Nano();
 ```
 
